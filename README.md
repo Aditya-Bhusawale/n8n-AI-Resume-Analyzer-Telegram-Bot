@@ -113,12 +113,3 @@ The bot generates:
 
 ---
 
-
-# 👨‍💻 Author
-
-**Aditya Bhusawale**
-
-
----
-
-⭐ If you found this project helpful, consider giving it a **Star** on GitHub!
