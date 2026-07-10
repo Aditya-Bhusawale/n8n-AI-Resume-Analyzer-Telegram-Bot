@@ -3,7 +3,6 @@
 An AI-powered Telegram bot built with **n8n** and **Google Gemini** that analyzes a candidate's resume against a job description and generates an ATS-style hiring report instantly.
 
 Users simply upload their resume PDF, paste a job description, and receive a detailed analysis directly in Telegram.
-
 ---
 
 ## 🚀 Features
