@@ -1,0 +1,291 @@
+{
+  "name": "demo_resume",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        96
+      ],
+      "id": "a565b677-365c-4795-bab2-341c65f21cfe",
+      "name": "Telegram Trigger",
+      "webhookId": "d2cfc4ff-e26a-4dd3-a34c-408cd9fb1a79",
+      "credentials": {
+        "telegramApi": {
+          "id": "bAkExvsariysUUkN",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "093c4c36-2891-4bdf-a445-eea93cc5ff7e",
+      "name": "Get a file",
+      "webhookId": "d6eba5f4-ad94-4fae-b427-4db8bbc3c599",
+      "credentials": {
+        "telegramApi": {
+          "id": "bAkExvsariysUUkN",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "dbd02176-c3f0-49d6-bf92-d2d339a9fd47",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert ATS Resume Analyzer and Technical Recruiter.\n\nCompare the candidate's resume with the job description.\n\nReturn ONLY valid JSON.\nDo NOT use markdown.\nDo NOT wrap the JSON in ```json.\nDo NOT add explanations outside JSON.\nIf information is missing, return \"Not Mentioned\".\nEnsure the JSON is complete, valid, and parsable with JSON.parse().\n\nRESUME:\n{{ $json.text }}\n\nJOB DESCRIPTION:\n{{ $('Telegram Trigger').item.json.message.caption }}\n\nAnalyze:\n- ATS Score (Overall, Skills, Experience, Education, Projects, Keywords, Short Explanation)\n- Candidate Summary (Experience Level, Recommendation)\n- Skills (Matched, Missing, Additional)\n- Top 5 Strengths\n- Top 5 Weaknesses\n- Top 5 Resume Improvements\n- Final Verdict (Hire/Maybe/No Hire, Confidence, Reason)\n\nReturn EXACTLY this JSON:\n\n{\n  \"candidate_name\": \"\",\n  \"job_title\": \"\",\n  \"company\": \"\",\n  \"ats_score\": {\n    \"overall\": 0,\n    \"skills\": 0,\n    \"experience\": 0,\n    \"education\": 0,\n    \"projects\": 0,\n    \"keywords\": 0,\n    \"explanation\": \"\"\n  },\n  \"candidate_summary\": {\n    \"experience_level\": \"\",\n    \"recommendation\": \"\"\n  },\n  \"skills\": {\n    \"matched\": [],\n    \"missing\": [],\n    \"additional\": []\n  },\n  \"strengths\": [],\n  \"weaknesses\": [],\n  \"resume_improvements\": [],\n  \"final_verdict\": {\n    \"decision\": \"\",\n    \"confidence\": 0,\n    \"reason\": \"\"\n  }\n}\n\nRules:\n- Maximum 5 items per array.\n- Keep explanations under 30 words.\n- Return only the JSON object.\n- Ensure all {} and [] are properly closed.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        896,
+        0
+      ],
+      "id": "dd41cced-ed58-415f-9b14-302a1df57261",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        976,
+        224
+      ],
+      "id": "6f177ee2-9c93-426b-aef3-60729c5ac607",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wWVfdCX5dgbaisJJ",
+          "name": "Google Gemini(PaLM) Api account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1472,
+        0
+      ],
+      "id": "8ad6f7b4-0507-4a8b-8199-ba1ea6724038",
+      "name": "Send a text message",
+      "webhookId": "42d30cda-06b8-4405-9298-59b44e91a3b2",
+      "credentials": {
+        "telegramApi": {
+          "id": "bAkExvsariysUUkN",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get the raw output\nlet text = $json.output;\n\n// Remove markdown if present\ntext = text.replace(/```json/g, \"\").replace(/```/g, \"\").trim();\n\n// Convert escaped characters\ntext = text\n  .replace(/\\\\n/g, \"\\n\")\n  .replace(/\\\\\"/g, '\"')\n  .replace(/\\\\\\\\/g, \"\\\\\");\n\n// Keep only the JSON object\nconst start = text.indexOf(\"{\");\nconst end = text.lastIndexOf(\"}\");\n\nif (start === -1 || end === -1) {\n  throw new Error(\"No valid JSON object found in AI output.\");\n}\n\ntext = text.substring(start, end + 1);\n\nlet report;\n\ntry {\n  report = JSON.parse(text);\n} catch (err) {  throw new Error(\n    `Invalid JSON returned by AI.\\n\\n${err.message}\\n\\nLast 500 chars:\\n${text.slice(-500)}`\n  );\n}\n\nfunction list(arr) {\n  if (!Array.isArray(arr) || arr.length === 0) return \"Not Available\";\n  return arr.map(i => `• ${i}`).join(\"\\n\");\n}\n\nconst message = `🤖 AI Resume Analysis Report\n\n👤 Candidate: ${report.candidate_name}\n💼 Job Role: ${report.job_title}\n🏢 Company: ${report.company}\n\n━━━━━━━━━━━━━━━━━━\n\n🎯 ATS Score: ${report.ats_score.overall}/100\n\n• Skills: ${report.ats_score.skills}/100\n• Experience: ${report.ats_score.experience}/100\n• Education: ${report.ats_score.education}/100\n• Projects: ${report.ats_score.projects}/100\n• Keywords: ${report.ats_score.keywords}/100\n\n━━━━━━━━━━━━━━━━━━\n\n📝 Summary\n\n${report.ats_score.explanation}\n\n━━━━━━━━━━━━━━━━━━\n\n✅ Matched Skills\n\n${list(report.skills.matched)}\n\n━━━━━━━━━━━━━━━━━━\n\n❌ Missing Skills\n\n${list(report.skills.missing)}\n\n━━━━━━━━━━━━━━━━━━\n\n💪 Strengths\n\n${list(report.strengths)}\n\n━━━━━━━━━━━━━━━━━━\n\n⚠️ Weaknesses\n\n${list(report.weaknesses)}\n\n━━━━━━━━━━━━━━━━━━\n\n🏁 Final Verdict\n\nDecision: ${report.final_verdict.decision}\nConfidence: ${report.final_verdict.confidence}%\n\nReason:\n${report.final_verdict.reason}`;\n\nreturn {\n    json: {\n      message\n    }\n  };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "1d53ebdc-c655-416d-875d-d8673e091613",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fc9f02d0-548e-4f91-81b5-826b81dba9bb",
+              "leftValue": "={{ $json.message.document.mime_type }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        96
+      ],
+      "id": "7d02ab3d-5a20-49fd-9a66-5837480f4d8a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Plz send Resume Pdf and Job description",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        192
+      ],
+      "id": "1cf8267b-8e47-4900-8aa1-2b328b21f5f2",
+      "name": "Send a text message1",
+      "webhookId": "764024b1-c18b-43fb-a4f2-40c41635fcda",
+      "credentials": {
+        "telegramApi": {
+          "id": "bAkExvsariysUUkN",
+          "name": "Telegram account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "682ea81f-3575-49b8-9ae4-ac72a8507a36",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f21341d6d207f26b2bfb2ca300ffb62cf6a2653d8dfe6efc2e5eb7c8d6e2a97b"
+  },
+  "nodeGroups": [],
+  "id": "VelD1TBjCbjFGbzf",
+  "tags": []
+}
