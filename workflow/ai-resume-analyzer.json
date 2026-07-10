@@ -147,7 +147,8 @@
               "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "exists",
+                "singleValue": true
               }
             }
           ],
@@ -259,14 +260,14 @@
       "main": [
         [
           {
-            "node": "Send a text message1",
+            "node": "Get a file",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Get a file",
+            "node": "Send a text message1",
             "type": "main",
             "index": 0
           }
@@ -280,7 +281,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "682ea81f-3575-49b8-9ae4-ac72a8507a36",
+  "versionId": "646edea9-37e7-4e4b-b696-e32ac6c6c477",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f21341d6d207f26b2bfb2ca300ffb62cf6a2653d8dfe6efc2e5eb7c8d6e2a97b"
