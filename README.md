@@ -88,41 +88,6 @@ The bot generates:
 
 ---
 
-# 🤖 Bot Flow
-
-```
-User:
-/start
-
-↓
-
-Bot:
-📄 Please upload your Resume (PDF).
-
-↓
-
-User uploads Resume.pdf
-
-↓
-
-Bot:
-🧠 Analyzing Resume...
-
-↓
-
-User sends Job Description
-
-↓
-
-Gemini AI
-
-↓
-
-Bot sends ATS Report
-```
-
----
-
 
 # 📌 Use Cases
 
